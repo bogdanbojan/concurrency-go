@@ -1,0 +1,379 @@
+Scale horizontally - ++ CPUs, machines => runtime improvement
+
+#Race conditions#
+
+Data race: 2 concurrent operations try to write to the same variable
+
+```
+var data int 
+go func() {
+	data++
+}
+if data == 0 {
+	fmt.Prin
+// First function waits on b, second functions waits on a. 
+go printSum(&a, &b)
+go printSum(&b, &a)
+wg.Wait()
+
+```
+
+*Coffman Conditions*:
+
+- Mutual Exclusion
+	A concurrent process holds exclusive rights to a resource at any one time.
+
+- Wait For Condition
+	A concurrent process must simultaneously hold a resource and be waiting for an
+additional resource.
+
+- No Preemption
+	A resource held by a concurrent process can only be released by that process, so
+it fulfills this condition.
+
+- Circular Wait
+	A concurrent process (P1) must be waiting on a chain of other concurrent pro‐
+cesses (P2), which are in turn waiting on it (P1), so it fulfills this final condition
+too.
+
+
+###Livelocks###
+
+Performing concurrent operations but these do not move the state of the program forward.
+
+```
+cadence := sync.NewCond(&sync.Mutex{})
+go func() {
+	for range time.Tick(1*time.Millisecond) {
+}
+}()
+
+takeStep := func() {
+	cadence.L.Lock()
+	cadence.Wait()
+	cadence.L.Unlock()
+}
+
+tryDir := func(dirName string, dir *int32, out *bytes.Buffer) bool {
+	fmt.Fprintf(out, " %v", dirName)
+	atomic.AddInt32(dir, 1)
+	takeStep()
+	if atomic.LoadInt32(dir) == 1 {
+	fmt.Fprint(out, ". Success!")
+	return true
+	}
+	takeStep()
+	atomic.AddInt32(dir, -1)
+	return false
+}
+
+var left, right int32
+tryLeft := func(out *bytes.Buffer) bool { return tryDir("left", &left, out) }
+tryRight := func(out *bytes.Buffer) bool { return tryDir("right", &right, out) }
+
+
+walk := func(walking *sync.WaitGroup, name string) {
+	var out bytes.Buffer
+	defer func() { fmt.Println(out.String()) }()
+	defer walking.Done()
+	fmt.Fprintf(&out, "%v is trying to scoot:", name)
+	for i := 0; i < 5; i++ {
+		if tryLeft(&out) || tryRight(&out) {
+			return
+		}
+	}
+	fmt.Fprintf(&out, "\n%v tosses her hands up in exasperation!", name)
+}
+
+var peopleInHallway sync.WaitGroup
+peopleInHallway.Add(2)
+go walk(&peopleInHallway, "Alice")
+go walk(&peopleInHallway,
+peopleInHallway.Wait()
+
+```
+
+tf("the value is %v. \n", data)
+}
+```
+
+#Atomicity#
+
+Atomicity changes with scope.
+Operations with the context of the machine vs operations with the context of the app, operations with the context of the OS vs operations with the contest of the machine, etc.
+
+
+i++ => In this case, operations are atomic. Combining them may not be. Again, depends on the context we are operating on.
+
+#Memory Access Synchronization#
+
+3 *critical sections* here:
+
+var data int
+go func() { data++}()
+if data == 0 {
+	fmt.Println("the value is 0.")
+} else {
+	fmt.Printf("the value is %v.\n", data)
+}
+
+2 Q:
+Critical sections entered and exited repeatedly?
+Size of said critical sections?
+
+#Deadlocks, Livelocks, and Starvation#
+
+###Deadlocks###
+// First function waits on b, second functions waits on a. 
+go printSum(&a, &b)
+go printSum(&b, &a)
+wg.Wait()
+
+```
+
+*Coffman Conditions*:
+
+- Mutual Exclusion
+	A concurrent process holds exclusive rights to a resource at any one time.
+
+- Wait For Condition
+	A concurrent process must simultaneously hold a resource and be waiting for an
+additional resource.
+
+- No Preemption
+	A resource held by a concurrent process can only be released by that process, so
+it fulfills this condition.
+
+- Circular Wait
+	A concurrent process (P1) must be waiting on a chain of other concurrent pro‐
+cesses (P2), which are in turn waiting on it (P1), so it fulfills this final condition
+too.
+
+
+###Livelocks###
+
+Performing concurrent operations but these do not move the state of the program forward.
+
+```
+cadence := sync.NewCond(&sync.Mutex{})
+go func() {
+	for range time.Tick(1*time.Millisecond) {
+}
+}()
+
+takeStep := func() {
+	cadence.L.Lock()
+	cadence.Wait()
+	cadence.L.Unlock()
+}
+
+tryDir := func(dirName string, dir *int32, out *bytes.Buffer) bool {
+	fmt.Fprintf(out, " %v", dirName)
+	atomic.AddInt32(dir, 1)
+	takeStep()
+	if atomic.LoadInt32(dir) == 1 {
+	fmt.Fprint(out, ". Success!")
+	return true
+	}
+	takeStep()
+	atomic.AddInt32(dir, -1)
+	return false
+}
+
+var left, right int32
+tryLeft := func(out *bytes.Buffer) bool { return tryDir("left", &left, out) }
+tryRight := func(out *bytes.Buffer) bool { return tryDir("right", &right, out) }
+
+
+walk := func(walking *sync.WaitGroup, name string) {
+	var out bytes.Buffer
+	defer func() { fmt.Println(out.String()) }()
+	defer walking.Done()
+	fmt.Fprintf(&out, "%v is trying to scoot:", name)
+	for i := 0; i < 5; i++ {
+		if tryLeft(&out) || tryRight(&out) {
+			return
+		}
+	}
+	fmt.Fprintf(&out, "\n%v tosses her hands up in exasperation!", name)
+}
+
+var peopleInHallway sync.WaitGroup
+peopleInHallway.Add(2)
+go walk(&peopleInHallway, "Alice")
+go walk(&peopleInHallway,
+peopleInHallway.Wait()
+
+```
+
+
+
+All concurrent processes are waiting on one another.
+
+```
+type value struct{
+	mu sync.Mutex
+	value int
+}
+
+var wg sync.WaitGroup
+printSum := func(v1, v2 *value) {
+	defer wg.Done()
+	v1.mu.Lock()
+	defer v1.mu.Unlock()
+
+	time.Sleep(2*time.Second)
+	v2.mu.Lock()
+	defer v2.mu.Unlock()
+
+	fmt.Printf("sum=%v\n", v1.value + v2.value)
+}
+
+var a, b value
+wg.Add(2)
+// First function waits on b, second functions waits on a. 
+go printSum(&a, &b)
+go printSum(&b, &a)
+wg.Wait()
+
+```
+
+*Coffman Conditions*:
+
+- Mutual Exclusion
+	A concurrent process holds exclusive rights to a resource at any one time.
+
+- Wait For Condition
+	A concurrent process must simultaneously hold a resource and be waiting for an
+additional resource.
+
+- No Preemption
+	A resource held by a concurrent process can only be released by that process, so
+it fulfills this condition.
+
+- Circular Wait
+	A concurrent process (P1) must be waiting on a chain of other concurrent pro‐
+cesses (P2), which are in turn waiting on it (P1), so it fulfills this final condition
+too.
+
+
+###Livelocks###
+
+Performing concurrent operations but these do not move the state of the program forward.
+
+```
+cadence := sync.NewCond(&sync.Mutex{})
+go func() {
+	for range time.Tick(1*time.Millisecond) {
+}
+}()
+
+takeStep := func() {
+	cadence.L.Lock()
+	cadence.Wait()
+	cadence.L.Unlock()
+}
+
+tryDir := func(dirName string, dir *int32, out *bytes.Buffer) bool {
+	fmt.Fprintf(out, " %v", dirName)
+	atomic.AddInt32(dir, 1)
+	takeStep()
+	if atomic.LoadInt32(dir) == 1 {
+	fmt.Fprint(out, ". Success!")
+	return true
+	}
+	takeStep()
+	atomic.AddInt32(dir, -1)
+	return false
+}
+
+var left, right int32
+tryLeft := func(out *bytes.Buffer) bool { return tryDir("left", &left, out) }
+tryRight := func(out *bytes.Buffer) bool { return tryDir("right", &right, out) }
+
+
+walk := func(walking *sync.WaitGroup, name string) {
+	var out bytes.Buffer
+	defer func() { fmt.Println(out.String()) }()
+	defer walking.Done()
+	fmt.Fprintf(&out, "%v is trying to scoot:", name)
+	for i := 0; i < 5; i++ {
+		if tryLeft(&out) || tryRight(&out) {
+			return
+		}
+	}
+	fmt.Fprintf(&out, "\n%v tosses her hands up in exasperation!", name)
+}
+
+var peopleInHallway sync.WaitGroup
+peopleInHallway.Add(2)
+go walk(&peopleInHallway, "Alice")
+go walk(&peopleInHallway,
+peopleInHallway.Wait()
+
+```
+
+Two or more concurrent processes attempt to prevent a deadlock without coordonation.
+
+###Starvation###
+
+Livelocks are actually a subset of a larger set of problems called starvation.
+Starvation is any situation in which a concurrent process cannot get all the resources it needs.
+
+Metrics can help identify starvation. For example, if you had two functions that used this:
+
+```
+// greedyWorker
+
+for begin := time.Now(); time.Since(begin) <= runtime; {
+	sharedLock.Lock()
+	time.Sleep(3*time.Nanosecond)
+	sharedLock.Unlock()
+	count++
+}
+
+// politeWorker
+
+for begin := time.Now(); time.Since(begin) <= runtime; {
+	sharedLock.Lock()
+	time.Sleep(1*time.Nanosecond)
+	sharedLock.Unlock()
+	sharedLock.Lock()
+	time.Sleep(1*time.Nanosecond)
+	sharedLock.Unlock()
+	sharedLock.Lock()
+	time.Sleep(1*time.Nanosecond)
+	sharedLock.Unlock()
+	count++
+}
+```
+
+If we were to add some print statements and let each function execute on different threads we would get:
+```
+Polite worker was able to execute 289777 work loops.
+Greedy worker was able to execute 471287 work loops
+```
+
+Thus, the greedy worker almost doubling the workloops of the polite worker we can conclude that the greedy worker has unnecessarily exapnded its hold on the shared lock beyond its critical section and is preventing (via starvation) the polite worker's goroutine from performing work efficiently.
+
+
+##Concurrency safety##
+
+```
+// CalculatePi calculates digits of Pi between the begin and end
+// place.
+//
+// Internally, CalculatePi will create FLOOR((end-begin)/2) concurrent
+// processes which recursively call CalculatePi. Synchronization of
+// writes to pi are handled internally by the Pi struct.
+func CalculatePi(begin, end int64) <chan uint
+```
+
+- Who is responsible for the concurrency?
+- How is the problem space mapped onto concurrency primitives?
+- Who is responsible for the synchronization?
+
+
+
+
+

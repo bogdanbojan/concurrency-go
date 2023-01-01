@@ -1,0 +1,10 @@
+#Modeling Your Code: Communicating Sequential Processes#
+
+Concurrency is a property of the code; parallelism is a property of the running program.
+
+Think about when you have only 1 core. We write concurrent code that we *hope* will be run in parallel.
+
+The seminal paper that stands at the base of go's big concepts, namely the supplantation of OS threads with goroutines and the introduction of channels is called "Communicating Sequential Processes" (CSP) and is written by Tony Hoare.
+
+###CSP###
+Input and output as primitives are often overlooked.
